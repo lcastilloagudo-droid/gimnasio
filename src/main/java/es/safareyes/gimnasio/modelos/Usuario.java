@@ -32,6 +32,4 @@ public class Usuario {
     @Column(name = "rol")
     @Enumerated(EnumType.ORDINAL)
     private Rol rol;
-
-
 }
