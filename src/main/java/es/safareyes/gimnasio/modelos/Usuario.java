@@ -3,33 +3,32 @@ package es.safareyes.gimnasio.modelos;
 import jakarta.persistence.*;
 import lombok.*;
 
-
 @Entity
-@Table (name = "usuario")
+@Table(name = "usuario")
 @Getter
 @Setter
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 @Builder
-
 public class Usuario {
-
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY )
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_usuario")
-    private Integer id;
+    private Long id;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_socio", nullable = false)
+    @JoinColumn(name = "id_socio")
     private Socio idSocio;
 
-    @Column(name = "nom_usuario")
+    @Column(name = "nombre_usuario", nullable = false, unique = true)
     private String nomUsuario;
 
-    @Column(name = "contrasenya")
+    @Column(name = "contrasena", nullable = false)
     private String contrasenya;
 
-    @Column(name = "rol")
-    @Enumerated(EnumType.ORDINAL)
+    @Enumerated(EnumType.STRING)
+    @Column(name = "rol", nullable = false)
     private Rol rol;
+
+
 }

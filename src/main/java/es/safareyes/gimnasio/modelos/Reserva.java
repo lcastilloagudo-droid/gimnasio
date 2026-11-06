@@ -2,23 +2,22 @@ package es.safareyes.gimnasio.modelos;
 
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "reserva")
 @Getter
 @Setter
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class Reserva {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY )
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_reserva")
-    private Integer id;
+    private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_socio", nullable = false)
     private Socio idSocio;
 
@@ -26,10 +25,12 @@ public class Reserva {
     @JoinColumn(name = "id_actividad", nullable = false)
     private Actividad idActividad;
 
-    @Column(name = "fecha_reserva")
+    @Column(name = "fecha_reserva", nullable = false)
     private LocalDateTime fechaReserva;
 
-    @Column(name = "estado")
-    @Enumerated(EnumType.ORDINAL)
+    @Enumerated(EnumType.STRING)
+    @Column(name = "estado", nullable = false)
     private Estado estado;
+
+
 }

@@ -2,48 +2,44 @@ package es.safareyes.gimnasio.modelos;
 
 import jakarta.persistence.*;
 import lombok.*;
-
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "socio")
 @Getter
 @Setter
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 @Builder
-
 public class Socio {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY )
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_socio")
-    private Integer id;
+    private Long id;
 
-    @Column(name = "dni")
+    @Column(name = "dni", nullable = false, unique = true)
     private String dni;
 
-    @Column(name = "nombre")
+    @Column(name = "nombre", nullable = false)
     private String nombre;
 
-    @Column(name = "apellidos")
+    @Column(name = "apellidos", nullable = false)
     private String apellidos;
 
-    @Column(name = "email")
+    @Column(name = "email", nullable = false, unique = true)
     private String email;
 
-    @Column(name = "telefono")
-    private Integer telefono;
+    @Column(name = "telf")
+    private String telefono;
 
-    @Column(name = "fecha_alta")
-    private LocalDateTime fechaAlta;
+    @Column(name = "fecha_alta", nullable = false)
+    private LocalDate fechaAlta;
 
-    @Column(name = "activo")
+    @Column(name = "activo", nullable = false)
     private Boolean activo;
 
-    @Column(name = "matricula")
-    private Integer matricula;
-
-
+    @Column(name = "matricula", nullable = false)
+    private Boolean matricula;
 
 
 }

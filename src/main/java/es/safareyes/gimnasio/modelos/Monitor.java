@@ -7,18 +7,20 @@ import lombok.*;
 @Table(name = "monitor")
 @Getter
 @Setter
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class Monitor {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY )
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_monitor")
-    private Integer id;
+    private Long id;
 
-    @Column(name = "nombre")
+    @Column(name = "nombre", nullable = false)
     private String nombre;
 
-    @Column(name = "apellidos")
+    @Column(name = "apellidos", nullable = false)
     private String apellidos;
+
+
 }

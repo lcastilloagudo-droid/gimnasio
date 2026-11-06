@@ -2,38 +2,39 @@ package es.safareyes.gimnasio.modelos;
 
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "actividad")
 @Getter
 @Setter
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class Actividad {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY )
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_actividad")
-    private Integer id;
+    private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_monitor", nullable = false)
     private Monitor idMonitor;
 
-    @Column(name = "fecha_hora")
+    @Column(name = "fecha_hora", nullable = false)
     private LocalDateTime fechaHora;
 
-    @Column(name = "nombre")
+    @Column(name = "nombre", nullable = false)
     private String nombre;
 
-    @Column(name = "duracion")
-    private LocalDateTime duracion;
+    @Column(name = "duracion", nullable = false)
+    private Integer duracion;
 
-    @Column(name = "sala")
+    @Column(name = "sala", nullable = false)
     private String sala;
 
-    @Column(name = "aforo_max")
+    @Column(name = "aforo_max", nullable = false)
     private Integer aforoMax;
+
+
 }

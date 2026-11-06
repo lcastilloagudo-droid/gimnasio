@@ -7,19 +7,20 @@ import lombok.*;
 @Table(name = "plan")
 @Getter
 @Setter
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class Plan {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY )
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_plan")
-    private Integer id;
+    private Long id;
 
-    @Column(name = "nombre")
+    @Column(name = "nombre", nullable = false, unique = true)
     private String nombre;
 
-    @Column(name = "tipo")
-    @Enumerated(EnumType.ORDINAL)
-    private Tipo tipo;
+    @Column(name = "tipo", nullable = false)
+    private String tipo;
+
+
 }
