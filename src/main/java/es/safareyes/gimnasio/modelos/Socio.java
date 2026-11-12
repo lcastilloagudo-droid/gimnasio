@@ -3,14 +3,11 @@ package es.safareyes.gimnasio.modelos;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "socio")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Socio {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -38,8 +35,27 @@ public class Socio {
     @Column(name = "activo", nullable = false)
     private Boolean activo;
 
-    @Column(name = "matricula", nullable = false)
-    private Boolean matricula;
+    @Column(name = "matricula")
+    private String matricula;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_plan")
+    private Plan plan;
 
+    @Column(name = "creado_en", updatable = false)
+    private LocalDateTime creadoEn;
+
+    @Column(name = "actualizado_en")
+    private LocalDateTime actualizadoEn;
+
+    @PrePersist
+    void alCrear() {
+        creadoEn = LocalDateTime.now();
+        actualizadoEn = creadoEn;
+    }
+
+    @PreUpdate
+    void alActualizar() {
+        actualizadoEn = LocalDateTime.now();
+    }
 }

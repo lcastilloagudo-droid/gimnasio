@@ -7,11 +7,7 @@ import java.time.LocalDate;
 
 @Entity
 @Table(name = "cuota")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Cuota {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,6 +17,11 @@ public class Cuota {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_socio", nullable = false)
     private Socio idSocio;
+
+    // Plan que tenia el socio cuando se genero esta cuota.
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_plan")
+    private Plan plan;
 
     @Column(name = "mes", nullable = false)
     private Short mes;
@@ -36,6 +37,4 @@ public class Cuota {
 
     @Column(name = "fecha_pago")
     private LocalDate fechaPago;
-
-
 }
