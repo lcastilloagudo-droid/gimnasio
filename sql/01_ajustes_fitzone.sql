@@ -1,63 +1,67 @@
 -- FitZone: adaptacion incremental de la BD del proyecto.
 -- Ejecutar en DBeaver conectado a la BD postgres, schema gimnasio_test.
--- IMPORTANTE: haz copia de seguridad si ya hay datos; no ejecutar sobre gimnasio.
+-- La BD no contiene datos, por lo que no se incluyen comprobaciones defensivas.
+
 BEGIN;
 SET LOCAL search_path TO gimnasio_test;
 
--- El precio de cada plan es obligatorio para el negocio.
--- Se deja NULL hasta configurar los precios reales de BASICO y PREMIUM.
+-- El precio mensual forma parte del plan.
 ALTER TABLE plan
-    ADD COLUMN IF NOT EXISTS precio_mensual NUMERIC(10,2);
-ALTER TABLE plan
-    DROP CONSTRAINT IF EXISTS chk_plan_precio_mensual;
+    ADD COLUMN precio_mensual NUMERIC(10,2);
+
 ALTER TABLE plan
     ADD CONSTRAINT chk_plan_precio_mensual
     CHECK (precio_mensual IS NULL OR precio_mensual >= 0);
 
--- 'matricula' almacenaba un booleano. No representa una matricula real.
--- Si fuera boolean, convertimos el campo a texto opcional.
-DO $$
-BEGIN
-    IF EXISTS (
-        SELECT 1 FROM information_schema.columns
-        WHERE table_schema = 'gimnasio_test'
-          AND table_name = 'socio' AND column_name = 'matricula'
-          AND data_type = 'boolean'
-    ) THEN
-        ALTER TABLE gimnasio_test.socio ALTER COLUMN matricula DROP DEFAULT;
-        ALTER TABLE gimnasio_test.socio ALTER COLUMN matricula DROP NOT NULL;
-        ALTER TABLE gimnasio_test.socio
-            ALTER COLUMN matricula TYPE VARCHAR(7) USING NULL::VARCHAR(7);
-        -- Se pierden los antiguos true/false, que nunca fueron matriculas.
-    END IF;
-END $$;
+-- La matricula estaba almacenada como BOOLEAN.
+-- Como una matricula real tiene formato 1234BCD, se convierte a texto.
+-- Al no existir datos, no necesitamos conservar ningun valor anterior.
+ALTER TABLE socio
+    ALTER COLUMN matricula TYPE VARCHAR(7)
+    USING NULL::VARCHAR(7);
 
-ALTER TABLE socio ALTER COLUMN matricula DROP NOT NULL;
-ALTER TABLE socio DROP CONSTRAINT IF EXISTS chk_socio_matricula;
-ALTER TABLE socio ADD CONSTRAINT chk_socio_matricula
-    CHECK (matricula IS NULL OR matricula ~ '^[0-9]{4}[BCDFGHJKLMNPRSTVWXYZ]{3}$');
+ALTER TABLE socio
+    ADD CONSTRAINT chk_socio_matricula
+    CHECK (
+        matricula IS NULL
+        OR matricula ~ '^[0-9]{4}[BCDFGHJKLMNPRSTVWXYZ]{3}$'
+    );
 
--- Plan vigente del socio; se asignara en las altas y cambios de plan.
-ALTER TABLE socio ADD COLUMN IF NOT EXISTS id_plan BIGINT;
-ALTER TABLE socio DROP CONSTRAINT IF EXISTS fk_socio_plan;
-ALTER TABLE socio ADD CONSTRAINT fk_socio_plan
-    FOREIGN KEY (id_plan) REFERENCES plan(id_plan) ON DELETE RESTRICT;
+-- Plan actual del socio: relacion N:1 entre socio y plan.
+ALTER TABLE socio
+    ADD COLUMN id_plan INTEGER;
 
--- Guardar en cada cuota el plan historico, sin afectar cuotas anteriores al cambiarlo.
-ALTER TABLE cuota ADD COLUMN IF NOT EXISTS id_plan BIGINT;
-ALTER TABLE cuota DROP CONSTRAINT IF EXISTS fk_cuota_plan;
-ALTER TABLE cuota ADD CONSTRAINT fk_cuota_plan
-    FOREIGN KEY (id_plan) REFERENCES plan(id_plan) ON DELETE RESTRICT;
+ALTER TABLE socio
+    ADD CONSTRAINT fk_socio_plan
+    FOREIGN KEY (id_plan)
+    REFERENCES plan(id_plan)
+    ON DELETE RESTRICT;
 
--- Auditoria automatica en la entidad Socio.
-ALTER TABLE socio ADD COLUMN IF NOT EXISTS creado_en TIMESTAMP;
-ALTER TABLE socio ADD COLUMN IF NOT EXISTS actualizado_en TIMESTAMP;
+-- La cuota conserva el plan con el que fue generada.
+ALTER TABLE cuota
+    ADD COLUMN id_plan INTEGER;
 
-CREATE INDEX IF NOT EXISTS idx_socio_id_plan ON socio(id_plan);
-CREATE INDEX IF NOT EXISTS idx_cuota_id_plan ON cuota(id_plan);
+ALTER TABLE cuota
+    ADD CONSTRAINT fk_cuota_plan
+    FOREIGN KEY (id_plan)
+    REFERENCES plan(id_plan)
+    ON DELETE RESTRICT;
+
+-- Campos de auditoria para Socio.
+ALTER TABLE socio
+    ADD COLUMN creado_en TIMESTAMP;
+
+ALTER TABLE socio
+    ADD COLUMN actualizado_en TIMESTAMP;
+
+-- Indices para consultas frecuentes por plan.
+CREATE INDEX idx_socio_id_plan ON socio(id_plan);
+CREATE INDEX idx_cuota_id_plan ON cuota(id_plan);
 
 COMMIT;
 
--- DESPUES: asignar precio_mensual a BASICO y PREMIUM, sin inventar importes.
--- Para datos existentes: completar socio.id_plan y cuota.id_plan segun historial real.
--- La antigua tabla plan_socio se conserva por seguridad hasta migrar datos.
+-- DESPUES:
+-- 1. Asignar precio_mensual a BASICO y PREMIUM.
+-- 2. Asignar id_plan a los socios cuando se creen.
+-- 3. Guardar id_plan en cada cuota al generarla.
+-- 4. Eliminar plan_socio cuando confirmemos que ya no se necesita.
