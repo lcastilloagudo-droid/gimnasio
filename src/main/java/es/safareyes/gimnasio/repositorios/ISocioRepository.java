@@ -6,8 +6,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -47,7 +49,25 @@ public interface ISocioRepository extends JpaRepository<Socio, Long>, JpaSpecifi
 
     Page<SocioResumen> findByNombreContainingIgnoreCase(String nombre, Pageable pageable);
 
-    // Q8: cargar plan de una vez en listados; evita consultas extra por socio.
+    // Consulta paginada que carga el plan N:1 en una sola operacion.
     @EntityGraph(attributePaths = "plan")
     Page<Socio> findByActivoTrue(Pageable pageable);
+
+    // Q4: RN-04, desactivar en bloque socios con al menos N cuotas pendientes.
+    // Se ejecuta dentro de una transaccion; devuelve cuantas filas modifica.
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Transactional
+    @Query("""
+            UPDATE Socio s SET s.activo = false
+            WHERE s.activo = true AND s.id IN (
+                SELECT c.idSocio.id
+                FROM Cuota c
+                WHERE c.estado = :estadoPendiente
+                GROUP BY c.idSocio.id
+                HAVING COUNT(c.id) >= :minimoPendientes
+            )
+            """)
+    int desactivarSociosMorosos(
+            @Param("estadoPendiente") String estadoPendiente,
+            @Param("minimoPendientes") long minimoPendientes);
 }

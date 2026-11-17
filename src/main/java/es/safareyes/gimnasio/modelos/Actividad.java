@@ -2,7 +2,10 @@ package es.safareyes.gimnasio.modelos;
 
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "actividad")
@@ -36,5 +39,9 @@ public class Actividad {
     @Column(name = "aforo_max", nullable = false)
     private Integer aforoMax;
 
-
+    // Lado inverso de Reserva.idActividad; no crea otra tabla.
+    // Permite el EntityGraph de actividades con sus reservas (Q8).
+    @OneToMany(mappedBy = "idActividad", fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<Reserva> reservas = new ArrayList<>();
 }
