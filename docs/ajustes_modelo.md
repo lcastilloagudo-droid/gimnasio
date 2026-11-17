@@ -11,22 +11,22 @@ Proyecto_Backend_SafaReyes.pdf, caso 2 FitZone, secciones 6.1 a 6.8.
 - `Socio.creadoEn/actualizadoEn`: auditoria mediante callbacks JPA.
 - `Rol`: ADMIN, RECEPCION y SOCIO, como exige FitZone.
 
-## Validaciones en el código
-Las restricciones CHECK de formato y de negocio no se utilizan en el esquema de pruebas.
-Se eliminan con `sql/02_eliminar_checks.sql`, incluidas las restricciones antiguas
-`usuario_rol_check`, `chk_socio_matricula` y `chk_plan_precio_mensual`.
-`SocioRequest` valida DNI, matrícula, email y campos obligatorios.
-`PlanRequest` valida el importe y datos del plan.
-`Rol` es un enum Java con ADMIN, RECEPCION y SOCIO.
-Los controladores deberán usar `@Valid` y los servicios comprobar duplicados,
-estados y permisos. Las PK, FK y UNIQUE siguen en PostgreSQL como integridad estructural.
+## Restricciones SQL y validaciones en Java
+El enunciado exige ambas cosas: `CHECK` en PostgreSQL para estados, rangos e importes,
+y validaciones de entrada en los DTOs con Jakarta Validation.
 
-**Aviso:** el enunciado del profesor pide CHECK en el esquema.
-Esta decisión sigue la preferencia del proyecto, pero debe revisarse antes de entregar.
+- `sql/01_ajustes_fitzone.sql`: estructura, precio del plan y formato de matrícula.
+- `sql/02_checks_fitzone.sql`: corrige `usuario_rol_check` para
+  `ADMIN`, `RECEPCION`, `SOCIO` e incorpora las restricciones de cuotas, reservas,
+  accesos y actividades, además de verificar precio y matrícula.
+- `SocioRequest` y `PlanRequest`: validación de formato en Java.
+- `DniValidator`: letra de control del DNI.
+- Los servicios comprobarán duplicados, autorizaciones y demás reglas de negocio.
+- Los controladores deberán usar `@Valid`.
 
 ## Pasos para aplicar
 1. Haz copia de seguridad de la base si contiene datos.
-2. En DBeaver, selecciona la base `postgres` y ejecuta `sql/01_ajustes_fitzone.sql`.
+2. En DBeaver, selecciona la base `postgres` y ejecuta `sql/01_ajustes_fitzone.sql` y después `sql/02_checks_fitzone.sql`.
 3. Verifica que `DB_SCHEMA=gimnasio_test` y ejecuta Spring Boot con `ddl-auto=validate`.
 4. Introduce precios reales en los planes y asigna el plan de los socios que ya existan.
 5. La tabla anterior `plan_socio` permanece sin borrar mientras se revisa su contenido.

@@ -19,6 +19,6 @@ public class Plan {
     @Column(name = "tipo", nullable = false)
     private String tipo;
 
-    @Column(name = "precio_mensual")
+    @Column(name = "precio_mensual", nullable = false, precision = 10, scale = 2)
     private BigDecimal precioMensual;
 }

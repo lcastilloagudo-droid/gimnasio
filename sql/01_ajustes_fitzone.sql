@@ -1,22 +1,26 @@
--- FitZone: migracion incremental e idempotente para PostgreSQL.
+-- FitZone: ajustes de esquema para PostgreSQL.
 -- Ejecutar en la base postgres, esquema gimnasio_test.
--- No aplicar al esquema gimnasio original. Copia de seguridad si hay datos.
--- Despues ejecutar 02_eliminar_checks.sql para quitar todos los CHECK antiguos.
--- Las reglas de negocio y el formato se validan en Java (DTOs y servicios).
+-- No ejecutar en el esquema gimnasio; hacer copia si contiene datos.
+-- Los CHECK y las validaciones Java son complementarios.
+-- Ejecutar despues sql/02_checks_fitzone.sql para alinear las restricciones
+-- de todas las tablas existentes, incluido el rol RECEPCION.
 
 BEGIN;
 SET LOCAL search_path TO gimnasio_test;
 
--- Plan: guardar precio mensual; la obligatoriedad y el importe se validan en Java.
+-- Precio mensual obligatorio y positivo.
 ALTER TABLE plan
     ADD COLUMN IF NOT EXISTS precio_mensual NUMERIC(10,2);
+
 ALTER TABLE plan
-    ALTER COLUMN precio_mensual DROP NOT NULL;
+    ALTER COLUMN precio_mensual SET NOT NULL;
 ALTER TABLE plan
     DROP CONSTRAINT IF EXISTS chk_plan_precio_mensual;
+ALTER TABLE plan
+    ADD CONSTRAINT chk_plan_precio_mensual CHECK (precio_mensual > 0);
 
--- Matricula: dato opcional y texto de 7 caracteres, nunca BOOLEAN.
--- La conversion desde BOOLEAN descarta el valor anterior, que no es matricula.
+-- La matricula es opcional y representa un texto, no un booleano.
+-- Si se migra desde BOOLEAN, no se conservan los antiguos true/false.
 ALTER TABLE socio ALTER COLUMN matricula DROP DEFAULT;
 ALTER TABLE socio ALTER COLUMN matricula DROP NOT NULL;
 
@@ -35,10 +39,13 @@ BEGIN
     END IF;
 END $$;
 
--- El formato se comprueba con @Pattern en SocioRequest.
-ALTER TABLE socio DROP CONSTRAINT IF EXISTS chk_socio_matricula;
+ALTER TABLE socio
+    DROP CONSTRAINT IF EXISTS chk_socio_matricula;
+ALTER TABLE socio
+    ADD CONSTRAINT chk_socio_matricula
+    CHECK (matricula IS NULL OR matricula ~ '^[0-9]{4}[BCDFGHJKLMNPRSTVWXYZ]{3}$');
 
--- Socio: plan vigente; cuota: plan historico al generar el cobro.
+-- Plan actual del socio y plan historico de cada cuota.
 ALTER TABLE socio ADD COLUMN IF NOT EXISTS id_plan BIGINT;
 ALTER TABLE cuota ADD COLUMN IF NOT EXISTS id_plan BIGINT;
 
@@ -64,6 +71,5 @@ CREATE INDEX IF NOT EXISTS idx_cuota_id_plan ON cuota(id_plan);
 
 COMMIT;
 
--- Pendiente: introducir planes BASICO y PREMIUM con sus precios reales;
--- asociar el plan a cada socio, y guardar el plan al generar cada cuota.
--- No borrar plan_socio hasta revisar si contiene informacion necesaria.
+-- Completar los precios reales de los planes y su asociacion a socios.
+-- No eliminar plan_socio hasta revisar su contenido.

@@ -5,7 +5,7 @@ El archivo `sql/data.sql` contiene exclusivamente **datos ficticios** para el es
 ## Ejecución en DBeaver
 
 1. Comprueba que el esquema `gimnasio_test` está vacío.
-2. Ejecuta primero `sql/01_ajustes_fitzone.sql` si no lo has aplicado y después `sql/02_eliminar_checks.sql` para eliminar CHECK antiguos (incluido `usuario_rol_check`).
+2. Ejecuta `sql/01_ajustes_fitzone.sql` si no lo has aplicado; después ejecuta `sql/02_checks_fitzone.sql` para mantener los CHECK exigidos y corregir `usuario_rol_check`.
 3. Selecciona la base `postgres` y ejecuta `sql/data.sql` completo.
 4. No lo ejecutes dos veces: los registros se insertan una sola vez y no se borran datos.
 5. Arranca Spring Boot y comprueba los repositorios.

@@ -1,7 +1,7 @@
 -- FITZONE | Datos de prueba del backend SafaReyes.
 -- Requisitos: Proyecto_Backend_SafaReyes.pdf, caso 2 (FitZone).
 -- Destino: base de datos postgres, esquema gimnasio_test.
--- ANTES: ejecutar sql/01_ajustes_fitzone.sql y sql/02_eliminar_checks.sql.
+-- ANTES: ejecutar sql/01_ajustes_fitzone.sql y sql/02_checks_fitzone.sql.
 -- Si la carga anterior fallo: terminar con ROLLBACK y comprobar tablas vacias.
 -- EJECUTAR UNA SOLA VEZ y sobre TABLAS VACIAS. No usa TRUNCATE ni DELETE.
 -- Datos ficticios; no utilizar estas credenciales ni estos importes en produccion.
