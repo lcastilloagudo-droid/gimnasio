@@ -1,30 +1,19 @@
 -- FitZone: migracion incremental e idempotente para PostgreSQL.
 -- Ejecutar en la base postgres, esquema gimnasio_test.
 -- No aplicar al esquema gimnasio original. Copia de seguridad si hay datos.
--- No inventa precios: si ya existen planes con precio NULL, la migracion
--- se detiene para que se les asigne un importe real antes de continuar.
+-- Despues ejecutar 02_eliminar_checks.sql para quitar todos los CHECK antiguos.
+-- Las reglas de negocio y el formato se validan en Java (DTOs y servicios).
 
 BEGIN;
 SET LOCAL search_path TO gimnasio_test;
 
--- Plan: precio mensual obligatorio y positivo.
+-- Plan: guardar precio mensual; la obligatoriedad y el importe se validan en Java.
 ALTER TABLE plan
     ADD COLUMN IF NOT EXISTS precio_mensual NUMERIC(10,2);
-
-DO $$
-BEGIN
-    IF EXISTS (SELECT 1 FROM gimnasio_test.plan WHERE precio_mensual IS NULL) THEN
-        RAISE EXCEPTION
-            'Hay planes sin precio_mensual. Asigna sus precios reales antes de ejecutar esta migracion.';
-    END IF;
-END $$;
-
 ALTER TABLE plan
-    ALTER COLUMN precio_mensual SET NOT NULL;
+    ALTER COLUMN precio_mensual DROP NOT NULL;
 ALTER TABLE plan
     DROP CONSTRAINT IF EXISTS chk_plan_precio_mensual;
-ALTER TABLE plan
-    ADD CONSTRAINT chk_plan_precio_mensual CHECK (precio_mensual > 0);
 
 -- Matricula: dato opcional y texto de 7 caracteres, nunca BOOLEAN.
 -- La conversion desde BOOLEAN descarta el valor anterior, que no es matricula.
@@ -46,11 +35,8 @@ BEGIN
     END IF;
 END $$;
 
-ALTER TABLE socio
-    DROP CONSTRAINT IF EXISTS chk_socio_matricula;
-ALTER TABLE socio
-    ADD CONSTRAINT chk_socio_matricula
-    CHECK (matricula IS NULL OR matricula ~ '^[0-9]{4}[BCDFGHJKLMNPRSTVWXYZ]{3}$');
+-- El formato se comprueba con @Pattern en SocioRequest.
+ALTER TABLE socio DROP CONSTRAINT IF EXISTS chk_socio_matricula;
 
 -- Socio: plan vigente; cuota: plan historico al generar el cobro.
 ALTER TABLE socio ADD COLUMN IF NOT EXISTS id_plan BIGINT;

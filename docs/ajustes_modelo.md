@@ -11,6 +11,19 @@ Proyecto_Backend_SafaReyes.pdf, caso 2 FitZone, secciones 6.1 a 6.8.
 - `Socio.creadoEn/actualizadoEn`: auditoria mediante callbacks JPA.
 - `Rol`: ADMIN, RECEPCION y SOCIO, como exige FitZone.
 
+## Validaciones en el código
+Las restricciones CHECK de formato y de negocio no se utilizan en el esquema de pruebas.
+Se eliminan con `sql/02_eliminar_checks.sql`, incluidas las restricciones antiguas
+`usuario_rol_check`, `chk_socio_matricula` y `chk_plan_precio_mensual`.
+`SocioRequest` valida DNI, matrícula, email y campos obligatorios.
+`PlanRequest` valida el importe y datos del plan.
+`Rol` es un enum Java con ADMIN, RECEPCION y SOCIO.
+Los controladores deberán usar `@Valid` y los servicios comprobar duplicados,
+estados y permisos. Las PK, FK y UNIQUE siguen en PostgreSQL como integridad estructural.
+
+**Aviso:** el enunciado del profesor pide CHECK en el esquema.
+Esta decisión sigue la preferencia del proyecto, pero debe revisarse antes de entregar.
+
 ## Pasos para aplicar
 1. Haz copia de seguridad de la base si contiene datos.
 2. En DBeaver, selecciona la base `postgres` y ejecuta `sql/01_ajustes_fitzone.sql`.
