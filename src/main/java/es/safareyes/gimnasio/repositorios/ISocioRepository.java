@@ -1,6 +1,7 @@
 package es.safareyes.gimnasio.repositorios;
 
 import es.safareyes.gimnasio.modelos.Socio;
+import es.safareyes.gimnasio.modelos.EstadoCuota;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -68,6 +69,6 @@ public interface ISocioRepository extends JpaRepository<Socio, Long>, JpaSpecifi
             )
             """)
     int desactivarSociosMorosos(
-            @Param("estadoPendiente") String estadoPendiente,
+            @Param("estadoPendiente") EstadoCuota estadoPendiente,
             @Param("minimoPendientes") long minimoPendientes);
 }

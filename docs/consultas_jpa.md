@@ -2,7 +2,7 @@
 
 Referencia: Proyecto_Backend_SafaReyes.pdf, secciones 3.3 y 6.7.
 La tabla de trazabilidad final se completara al implementar los servicios y endpoints.
-Las consultas estan escritas, pero aun no verificadas contra la base PostgreSQL local.
+Las consultas pasaron las ocho pruebas de RepositoriosJpaTest antes del cambio de enums. Pendiente repetir las pruebas con los nuevos tipos.
 
 | Tipo exigido | Ubicacion | Ejemplos de consultas |
 | --- | --- | --- |
@@ -21,7 +21,7 @@ Las consultas estan escritas, pero aun no verificadas contra la base PostgreSQL 
 - Accesos: comprobar si hay entrada abierta, contar aforo del dia y registrar salida.
 - Actividades y reservas: consultar sesiones, plazas, duplicados, maximo tres futuras; usar bloqueo pesimista durante reservas para evitar sobreaforo.
 - Usuarios: consulta para autenticacion futura, sin devolver contrasenas en la API.
-- Los valores persistidos de estados (PENDIENTE, PAGADA, PERMITIDO, etc.) se pasan como parametros, para no acoplar consultas a cadenas no verificadas.
+- Los estados de cuota y los resultados de acceso son enums persistidos con EnumType.STRING. Las consultas derivadas y JPQL reciben el enum; las consultas SQL nativas reciben su nombre mediante `.name()` para comparar con el VARCHAR de PostgreSQL.
 
 ## Verificaciones necesarias
 1. Actualizar la rama `test` y arrancar Spring Boot con `ddl-auto=validate`.

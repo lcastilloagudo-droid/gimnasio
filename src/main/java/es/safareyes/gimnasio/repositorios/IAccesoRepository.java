@@ -1,6 +1,7 @@
 package es.safareyes.gimnasio.repositorios;
 
 import es.safareyes.gimnasio.modelos.Acceso;
+import es.safareyes.gimnasio.modelos.ResultadoAcceso;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,10 +17,10 @@ public interface IAccesoRepository extends JpaRepository<Acceso, Long> {
 
     // RN-05/RN-07: localizar una entrada permitida que aun no tiene salida.
     Optional<Acceso> findFirstByIdSocio_IdAndTipoResultadoAndFechaHoraSalidaIsNullOrderByFechaHoraEntradaDesc(
-            Long socioId, String resultado);
+            Long socioId, ResultadoAcceso resultado);
 
     boolean existsByIdSocio_IdAndTipoResultadoAndFechaHoraSalidaIsNull(
-            Long socioId, String resultado);
+            Long socioId, ResultadoAcceso resultado);
 
     // Q2: el aforo cuenta solo entradas permitidas de hoy sin salida registrada.
     @Query("""
@@ -31,11 +32,12 @@ public interface IAccesoRepository extends JpaRepository<Acceso, Long> {
               AND a.fechaHoraEntrada < :hasta
             """)
     long contarPersonasDentro(
-            @Param("permitido") String permitido,
+            @Param("permitido") ResultadoAcceso permitido,
             @Param("desde") LocalDateTime desde,
             @Param("hasta") LocalDateTime hasta);
 
     // Q3: horas punta, agrupando los accesos por horas (PostgreSQL).
+    // SQL nativo: pasar ResultadoAcceso.PERMITIDO.name() para comparar el VARCHAR.
     @Query(value = """
             SELECT DATE_TRUNC('hour', a.fecha_hora_entrada) AS hora,
                    COUNT(*) AS entradas

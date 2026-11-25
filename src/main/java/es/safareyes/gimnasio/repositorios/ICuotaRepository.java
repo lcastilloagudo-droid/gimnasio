@@ -2,6 +2,7 @@ package es.safareyes.gimnasio.repositorios;
 
 import es.safareyes.gimnasio.dto.response.IngresoMensualDto;
 import es.safareyes.gimnasio.modelos.Cuota;
+import es.safareyes.gimnasio.modelos.EstadoCuota;
 import es.safareyes.gimnasio.modelos.Socio;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,12 +17,12 @@ public interface ICuotaRepository extends JpaRepository<Cuota, Long> {
     // Q1: evitar dos cuotas del mismo socio, mes y año (RN-03).
     boolean existsByIdSocio_IdAndMesAndAnyo(Long socioId, Short mes, Short anyo);
 
-    long countByIdSocio_IdAndEstado(Long socioId, String estado);
+    long countByIdSocio_IdAndEstado(Long socioId, EstadoCuota estado);
 
     // Q6: historial paginado del socio (endpoint 9).
     Page<Cuota> findByIdSocio_IdOrderByAnyoDescMesDesc(Long socioId, Pageable pageable);
 
-    List<Cuota> findByMesAndAnyoAndEstado(Short mes, Short anyo, String estado);
+    List<Cuota> findByMesAndAnyoAndEstado(Short mes, Short anyo, EstadoCuota estado);
 
     // Q2: socios con cuotas pendientes en un mes (endpoint 10).
     @Query("""
@@ -33,7 +34,7 @@ public interface ICuotaRepository extends JpaRepository<Cuota, Long> {
     List<Socio> buscarSociosConCuotaPendiente(
             @Param("mes") Short mes,
             @Param("anyo") Short anyo,
-            @Param("estado") String estado);
+            @Param("estado") EstadoCuota estado);
 
     // Q2 + Q5: JOIN, SUM, GROUP BY y proyeccion mediante record.
     // Agrupa por el mes al que corresponde la cuota, no por la fecha del pago.
@@ -47,9 +48,10 @@ public interface ICuotaRepository extends JpaRepository<Cuota, Long> {
             """)
     List<IngresoMensualDto> resumirCuotasPagadasPorMesYPlan(
             @Param("anyo") Short anyo,
-            @Param("estado") String estado);
+            @Param("estado") EstadoCuota estado);
 
     // Q3: informe SQL nativo con EXTRACT sobre la fecha real del cobro.
+    // SQL nativo: pasar EstadoCuota.PAGADA.name() para comparar el VARCHAR.
     @Query(value = """
             SELECT CAST(EXTRACT(MONTH FROM c.fecha_pago) AS INTEGER) AS mes,
                    p.nombre AS plan,

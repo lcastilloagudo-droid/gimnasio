@@ -32,8 +32,9 @@ public class Cuota {
     @Column(name = "importe", nullable = false)
     private BigDecimal importe;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "estado", nullable = false)
-    private String estado;
+    private EstadoCuota estado;
 
     @Column(name = "fecha_pago")
     private LocalDate fechaPago;

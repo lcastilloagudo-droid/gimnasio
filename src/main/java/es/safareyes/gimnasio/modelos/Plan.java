@@ -16,8 +16,9 @@ public class Plan {
     @Column(name = "nombre", nullable = false, unique = true)
     private String nombre;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "tipo", nullable = false)
-    private String tipo;
+    private Tipo tipo;
 
     @Column(name = "precio_mensual", nullable = false, precision = 10, scale = 2)
     private BigDecimal precioMensual;

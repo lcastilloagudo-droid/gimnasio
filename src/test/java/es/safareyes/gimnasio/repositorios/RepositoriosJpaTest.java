@@ -2,6 +2,10 @@ package es.safareyes.gimnasio.repositorios;
 
 import es.safareyes.gimnasio.modelos.Actividad;
 import es.safareyes.gimnasio.modelos.Estado;
+import es.safareyes.gimnasio.modelos.EstadoCuota;
+import es.safareyes.gimnasio.modelos.MotivoDenegacion;
+import es.safareyes.gimnasio.modelos.ResultadoAcceso;
+import es.safareyes.gimnasio.modelos.Tipo;
 import es.safareyes.gimnasio.modelos.Socio;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,10 +57,17 @@ class RepositoriosJpaTest {
         assertThat(socios.existsByDniIgnoreCase("00000001r")).isTrue();
         assertThat(socios.existsByEmailIgnoreCase("SOCIO01@EJEMPLO.TEST")).isTrue();
         assertThat(socios.countByActivoTrue()).isEqualTo(17);
-        assertThat(planes.findByNombreIgnoreCase("premium")).isPresent();
+        assertThat(planes.findByNombreIgnoreCase("premium").orElseThrow().getTipo())
+                .isEqualTo(Tipo.PREMIUM);
         assertThat(monitores.findAllByOrderByApellidosAscNombreAsc()).hasSize(4);
         assertThat(usuarios.findByNomUsuarioIgnoreCase("ADMIN_FITZONE")).isPresent();
-        assertThat(accesos.findFirstByIdSocio_IdOrderByFechaHoraEntradaDesc(idAna)).isPresent();
+        var accesoAna = accesos.findFirstByIdSocio_IdOrderByFechaHoraEntradaDesc(idAna).orElseThrow();
+        assertThat(accesoAna.getTipoResultado()).isEqualTo(ResultadoAcceso.PERMITIDO);
+        assertThat(accesoAna.getMotivoDenegacion()).isNull();
+        Long idDaniel = socios.findByDniIgnoreCase("00000006Y").orElseThrow().getId();
+        var accesoDaniel = accesos.findFirstByIdSocio_IdOrderByFechaHoraEntradaDesc(idDaniel).orElseThrow();
+        assertThat(accesoDaniel.getTipoResultado()).isEqualTo(ResultadoAcceso.DENEGADO);
+        assertThat(accesoDaniel.getMotivoDenegacion()).isEqualTo(MotivoDenegacion.YA_DENTRO);
         assertThat(reservas.countByIdActividad_IdAndEstado(
                 spinningCompleto().getId(), Estado.ACTIVA)).isEqualTo(2);
     }
@@ -71,9 +82,9 @@ class RepositoriosJpaTest {
                 socio.getId(), PageRequest.of(0, 1)).getContent().get(0);
 
         assertThat(cuotas.buscarSociosConCuotaPendiente(
-                primeraCuota.getMes(), primeraCuota.getAnyo(), "PENDIENTE")).hasSize(6);
+                primeraCuota.getMes(), primeraCuota.getAnyo(), EstadoCuota.PENDIENTE)).hasSize(6);
         assertThat(cuotas.resumirCuotasPagadasPorMesYPlan(
-                primeraCuota.getAnyo(), "PAGADA")).isNotEmpty();
+                primeraCuota.getAnyo(), EstadoCuota.PAGADA)).isNotEmpty();
 
         Actividad actividad = spinningCompleto();
         LocalDate fecha = actividad.getFechaHora().toLocalDate();
@@ -87,16 +98,17 @@ class RepositoriosJpaTest {
         Long idAna = ana().getId();
         var cuotaPagada = cuotas.findByIdSocio_IdOrderByAnyoDescMesDesc(
                 idAna, PageRequest.of(0, 1)).getContent().get(0);
+        assertThat(cuotaPagada.getEstado()).isEqualTo(EstadoCuota.PAGADA);
 
         assertThat(cuotas.ingresosCobradosPorMesYPlan(
-                cuotaPagada.getFechaPago().getYear(), "PAGADA")).isNotEmpty();
+                cuotaPagada.getFechaPago().getYear(), EstadoCuota.PAGADA.name())).isNotEmpty();
 
         LocalDate fecha = accesos.findFirstByIdSocio_IdOrderByFechaHoraEntradaDesc(
                 idAna).orElseThrow().getFechaHoraEntrada().toLocalDate();
         LocalDateTime desde = fecha.atStartOfDay();
 
         assertThat(accesos.contarEntradasPorHora(
-                "PERMITIDO", desde, fecha.plusDays(1).atStartOfDay())).isNotEmpty();
+                ResultadoAcceso.PERMITIDO.name(), desde, fecha.plusDays(1).atStartOfDay())).isNotEmpty();
     }
 
     @Test
@@ -105,7 +117,7 @@ class RepositoriosJpaTest {
         Socio moroso = socios.findByDniIgnoreCase("00000015S").orElseThrow();
         assertThat(moroso.getActivo()).isTrue();
 
-        assertThat(socios.desactivarSociosMorosos("PENDIENTE", 2)).isEqualTo(1);
+        assertThat(socios.desactivarSociosMorosos(EstadoCuota.PENDIENTE, 2)).isEqualTo(1);
         assertThat(socios.findById(moroso.getId()).orElseThrow().getActivo()).isFalse();
         // @DataJpaTest revierte el UPDATE al terminar.
     }
@@ -121,7 +133,7 @@ class RepositoriosJpaTest {
         var cuota = cuotas.findByIdSocio_IdOrderByAnyoDescMesDesc(
                 socio.getId(), PageRequest.of(0, 1)).getContent().get(0);
         assertThat(cuotas.resumirCuotasPagadasPorMesYPlan(
-                cuota.getAnyo(), "PAGADA")).isNotEmpty();
+                cuota.getAnyo(), EstadoCuota.PAGADA)).isNotEmpty();
     }
 
     @Test
