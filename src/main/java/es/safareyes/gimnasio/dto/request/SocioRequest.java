@@ -13,6 +13,7 @@ import jakarta.validation.constraints.Size;
  * Las reglas de negocio (DNI/email duplicado, estado, plan) van en el servicio.
  */
 public record SocioRequest(
+
         @NotBlank(message = "El DNI es obligatorio")
         @DniValido
         String dni,
