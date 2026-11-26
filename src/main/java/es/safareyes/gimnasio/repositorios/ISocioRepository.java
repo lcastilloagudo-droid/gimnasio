@@ -4,6 +4,7 @@ import es.safareyes.gimnasio.modelos.Socio;
 import es.safareyes.gimnasio.modelos.EstadoCuota;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -24,6 +25,13 @@ public interface ISocioRepository extends JpaRepository<Socio, Long>, JpaSpecifi
     boolean existsByDniIgnoreCase(String dni);
 
     boolean existsByEmailIgnoreCase(String email);
+
+    boolean existsByEmailIgnoreCaseAndIdNot(String email, Long id);
+
+    // Carga el plan del socio tambien al aplicar filtros dinamicos paginados.
+    @Override
+    @EntityGraph(attributePaths = "plan")
+    Page<Socio> findAll(Specification<Socio> spec, Pageable pageable);
 
     Page<Socio> findByActivo(Boolean activo, Pageable pageable);
 

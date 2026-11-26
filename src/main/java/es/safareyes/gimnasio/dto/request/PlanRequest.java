@@ -8,7 +8,7 @@ import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 
 /**
- * Validaciones de entrada del plan, sin restricciones CHECK en la base de datos.
+ * Validaciones de entrada del plan, complementarias a las restricciones de la base de datos.
  */
 public record PlanRequest(
         @NotBlank(message = "El nombre del plan es obligatorio")

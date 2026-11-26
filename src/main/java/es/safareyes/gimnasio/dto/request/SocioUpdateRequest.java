@@ -1,6 +1,28 @@
 package es.safareyes.gimnasio.dto.request;
 
-public record SocioUpdateRequest(
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 
+/** PUT: sustituye el contacto, el plan y la matricula; null elimina datos opcionales. */
+public record SocioUpdateRequest(
+        @NotBlank(message = "El correo es obligatorio")
+        @Email(message = "El correo no tiene un formato valido")
+        @Size(max = 255)
+        String email,
+
+        @Size(max = 20)
+        String telefono,
+
+        @Pattern(regexp = "[0-9]{4}[BCDFGHJKLMNPRSTVWXYZ]{3}",
+                message = "La matricula debe tener formato 1234BCD")
+        String matricula,
+
+        @NotNull(message = "Debes indicar un plan")
+        @Positive(message = "El identificador del plan debe ser positivo")
+        Long idPlan
 ) {
 }
