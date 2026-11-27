@@ -117,6 +117,9 @@ public class SocioService {
     }
 
     private Plan buscarPlan(Long id) {
+        if (id == null) {
+            return null;
+        }
         return planRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("No existe el plan con id " + id));
     }

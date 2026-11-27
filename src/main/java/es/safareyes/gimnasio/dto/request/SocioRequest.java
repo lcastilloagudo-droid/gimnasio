@@ -3,7 +3,6 @@ package es.safareyes.gimnasio.dto.request;
 import es.safareyes.gimnasio.validacion.DniValido;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
@@ -40,7 +39,6 @@ public record SocioRequest(
         )
         String matricula,
 
-        @NotNull(message = "Debes indicar un plan")
         @Positive(message = "El identificador del plan debe ser positivo")
         Long idPlan
 ) {

@@ -63,6 +63,17 @@ class SocioServiceTest {
     }
 
     @Test
+    void altaSinPlan() {
+        when(socios.saveAndFlush(any(Socio.class))).thenAnswer(invocacion -> invocacion.getArgument(0));
+
+        var respuesta = servicio.createSocio(new SocioRequest(
+                "12345678Z", "Ana", "Lopez", "ana@ejemplo.test", null, null, null));
+
+        assertThat(respuesta.plan()).isNull();
+        verifyNoInteractions(planes);
+    }
+
+    @Test
     void rechazaDniDuplicado() {
         when(socios.existsByDniIgnoreCase("12345678Z")).thenReturn(true);
         assertThatThrownBy(() -> servicio.createSocio(alta())).isInstanceOf(ConflictoException.class);
@@ -98,6 +109,19 @@ class SocioServiceTest {
         assertThat(respuesta.dni()).isEqualTo("12345678Z");
         assertThat(respuesta.activo()).isTrue();
         assertThat(respuesta.plan().id()).isEqualTo(2L);
+    }
+
+    @Test
+    void actualizarPermiteEliminarPlan() {
+        Socio socio = Socio.builder().id(10L).plan(premium).build();
+        when(socios.buscarConPlan(10L)).thenReturn(Optional.of(socio));
+        when(socios.saveAndFlush(socio)).thenReturn(socio);
+
+        var respuesta = servicio.actualizar(10L, new SocioUpdateRequest(
+                "ana@ejemplo.test", null, null, null));
+
+        assertThat(respuesta.plan()).isNull();
+        verifyNoInteractions(planes);
     }
 
     @Test
