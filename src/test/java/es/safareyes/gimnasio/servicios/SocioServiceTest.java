@@ -5,6 +5,7 @@ import es.safareyes.gimnasio.dto.request.SocioRequest;
 import es.safareyes.gimnasio.dto.request.SocioUpdateRequest;
 import es.safareyes.gimnasio.exception.ConflictoException;
 import es.safareyes.gimnasio.exception.RecursoNoEncontradoException;
+import es.safareyes.gimnasio.exception.ReglaNegocioException;
 import es.safareyes.gimnasio.mapper.PlanMapperImpl;
 import es.safareyes.gimnasio.mapper.SocioMapperImpl;
 import es.safareyes.gimnasio.modelos.Plan;
@@ -70,7 +71,34 @@ class SocioServiceTest {
                 "12345678Z", "Ana", "Lopez", "ana@ejemplo.test", null, null, null));
 
         assertThat(respuesta.plan()).isNull();
+        assertThat(respuesta.activo()).isFalse();
         verifyNoInteractions(planes);
+    }
+
+    @Test
+    void rechazaPlanInexistente() {
+        assertThatThrownBy(() -> servicio.createSocio(alta()))
+                .isInstanceOf(RecursoNoEncontradoException.class);
+        verify(socios, never()).saveAndFlush(any(Socio.class));
+    }
+
+    @Test
+    void rechazaActivarSocioSinPlan() {
+        when(socios.bloquearPorId(10L)).thenReturn(Optional.of(Socio.builder().activo(false).build()));
+
+        assertThatThrownBy(() -> servicio.cambiarEstado(10L, new SocioEstadoRequest(true)))
+                .isInstanceOf(ReglaNegocioException.class);
+        verify(socios, never()).saveAndFlush(any(Socio.class));
+    }
+
+    @Test
+    void rechazaQuitarPlanASocioActivo() {
+        when(socios.bloquearPorId(10L)).thenReturn(Optional.of(Socio.builder().activo(true).plan(premium).build()));
+
+        assertThatThrownBy(() -> servicio.actualizar(10L,
+                new SocioUpdateRequest("ana@ejemplo.test", null, null, null)))
+                .isInstanceOf(ReglaNegocioException.class);
+        verify(socios, never()).saveAndFlush(any(Socio.class));
     }
 
     @Test
@@ -95,16 +123,18 @@ class SocioServiceTest {
     }
 
     @Test
-    void actualizarPermiteEliminarMatriculaYNoCambiaIdentidad() {
+    void actualizarCambiaContactoYEliminaMatriculaSinCambiarIdentidad() {
         Socio socio = Socio.builder().id(10L).dni("12345678Z").nombre("Ana")
                 .email("ana@ejemplo.test").matricula("1234BCD").activo(true).build();
-        when(socios.buscarConPlan(10L)).thenReturn(Optional.of(socio));
+        when(socios.bloquearPorId(10L)).thenReturn(Optional.of(socio));
         when(planes.findById(2L)).thenReturn(Optional.of(premium));
         when(socios.saveAndFlush(socio)).thenReturn(socio);
 
         var respuesta = servicio.actualizar(10L, new SocioUpdateRequest(
-                "ana@ejemplo.test", null, null, 2L));
+                "NUEVO@ejemplo.test", "611123123", null, 2L));
 
+        assertThat(respuesta.email()).isEqualTo("nuevo@ejemplo.test");
+        assertThat(respuesta.telefono()).isEqualTo("611123123");
         assertThat(respuesta.matricula()).isNull();
         assertThat(respuesta.dni()).isEqualTo("12345678Z");
         assertThat(respuesta.activo()).isTrue();
@@ -113,14 +143,15 @@ class SocioServiceTest {
 
     @Test
     void actualizarPermiteEliminarPlan() {
-        Socio socio = Socio.builder().id(10L).plan(premium).build();
-        when(socios.buscarConPlan(10L)).thenReturn(Optional.of(socio));
+        Socio socio = Socio.builder().id(10L).activo(false).plan(premium).build();
+        when(socios.bloquearPorId(10L)).thenReturn(Optional.of(socio));
         when(socios.saveAndFlush(socio)).thenReturn(socio);
 
         var respuesta = servicio.actualizar(10L, new SocioUpdateRequest(
                 "ana@ejemplo.test", null, null, null));
 
         assertThat(respuesta.plan()).isNull();
+        assertThat(respuesta.activo()).isFalse();
         verifyNoInteractions(planes);
     }
 
@@ -128,7 +159,7 @@ class SocioServiceTest {
     void cambioDeEstadoNoModificaContactoNiPlan() {
         Socio socio = Socio.builder().id(10L).email("ana@ejemplo.test")
                 .plan(premium).activo(true).build();
-        when(socios.buscarConPlan(10L)).thenReturn(Optional.of(socio));
+        when(socios.bloquearPorId(10L)).thenReturn(Optional.of(socio));
         when(socios.saveAndFlush(socio)).thenReturn(socio);
 
         var respuesta = servicio.cambiarEstado(10L, new SocioEstadoRequest(false));

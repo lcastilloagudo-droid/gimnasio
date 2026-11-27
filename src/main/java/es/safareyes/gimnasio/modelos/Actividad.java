@@ -27,13 +27,13 @@ public class Actividad {
     @Column(name = "fecha_hora", nullable = false)
     private LocalDateTime fechaHora;
 
-    @Column(name = "nombre", nullable = false)
+    @Column(name = "nombre", nullable = false, length = 120)
     private String nombre;
 
     @Column(name = "duracion", nullable = false)
     private Integer duracion;
 
-    @Column(name = "sala", nullable = false)
+    @Column(name = "sala", nullable = false, length = 80)
     private String sala;
 
     @Column(name = "aforo_max", nullable = false)

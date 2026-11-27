@@ -2,6 +2,7 @@ package es.safareyes.gimnasio.repositorios;
 
 import es.safareyes.gimnasio.modelos.Socio;
 import es.safareyes.gimnasio.modelos.EstadoCuota;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -9,11 +10,13 @@ import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -47,6 +50,10 @@ public interface ISocioRepository extends JpaRepository<Socio, Long>, JpaSpecifi
             """)
     Optional<Socio> buscarConPlan(@Param("id") Long id);
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT s FROM Socio s WHERE s.id = :id")
+    Optional<Socio> bloquearPorId(@Param("id") Long id);
+
     // Q5: proyeccion por interfaz; no carga entidades enteras.
     interface SocioResumen {
         Long getId();
@@ -67,7 +74,7 @@ public interface ISocioRepository extends JpaRepository<Socio, Long>, JpaSpecifi
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Transactional
     @Query("""
-            UPDATE Socio s SET s.activo = false
+            UPDATE Socio s SET s.activo = false, s.actualizadoEn = :actualizadoEn
             WHERE s.activo = true AND s.id IN (
                 SELECT c.idSocio.id
                 FROM Cuota c
@@ -78,5 +85,6 @@ public interface ISocioRepository extends JpaRepository<Socio, Long>, JpaSpecifi
             """)
     int desactivarSociosMorosos(
             @Param("estadoPendiente") EstadoCuota estadoPendiente,
-            @Param("minimoPendientes") long minimoPendientes);
+            @Param("minimoPendientes") long minimoPendientes,
+            @Param("actualizadoEn") LocalDateTime actualizadoEn);
 }

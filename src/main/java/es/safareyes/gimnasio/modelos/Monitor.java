@@ -16,10 +16,10 @@ public class Monitor {
     @Column(name = "id_monitor")
     private Long id;
 
-    @Column(name = "nombre", nullable = false)
+    @Column(name = "nombre", nullable = false, length = 100)
     private String nombre;
 
-    @Column(name = "apellidos", nullable = false)
+    @Column(name = "apellidos", nullable = false, length = 150)
     private String apellidos;
 
 

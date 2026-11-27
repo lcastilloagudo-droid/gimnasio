@@ -17,17 +17,17 @@ public class Usuario {
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_socio")
+    @JoinColumn(name = "id_socio", unique = true)
     private Socio idSocio;
 
-    @Column(name = "nombre_usuario", nullable = false, unique = true)
+    @Column(name = "nombre_usuario", nullable = false, unique = true, length = 100)
     private String nomUsuario;
 
-    @Column(name = "contrasena", nullable = false)
+    @Column(name = "contrasena", nullable = false, length = 255)
     private String contrasenya;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "rol", nullable = false)
+    @Column(name = "rol", nullable = false, length = 30)
     private Rol rol;
 
 

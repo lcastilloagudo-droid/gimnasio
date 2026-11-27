@@ -1,12 +1,12 @@
 package es.safareyes.gimnasio.dto.request;
 
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 public record LoginRequest(
-        @NotBlank(message = "El email es obligatorio")
-        @Email(message = "El email no tiene un formato válido")
-        String email,
+        @NotBlank(message = "El nombre de usuario es obligatorio")
+        @Size(max = 100)
+        String nomUsuario,
 
         @NotBlank(message = "La contraseña es obligatoria")
         String password

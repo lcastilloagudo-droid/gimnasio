@@ -2,7 +2,6 @@
 -- PostgreSQL database dump
 --
 
-\restrict shXDXE2I20VoNkYyE3mMjQ7E734OJhjwmxOTJqxTHxWGF6GHHIheypjUr7xgJhT
 
 -- Dumped from database version 16.15 (Ubuntu 16.15-0ubuntu0.24.04.1)
 -- Dumped by pg_dump version 16.15 (Ubuntu 16.15-0ubuntu0.24.04.1)
@@ -41,7 +40,6 @@ CREATE TABLE gimnasio_test.acceso (
     motivo_denegacion character varying(255),
     ticket_parking character varying(100),
     id_socio bigint NOT NULL,
-    CONSTRAINT acceso_tipo_resultado_check CHECK (((tipo_resultado)::text = ANY ((ARRAY['PERMITIDO'::character varying, 'DENEGADO'::character varying])::text[]))),
     CONSTRAINT chk_acceso_motivo_denegacion CHECK (((motivo_denegacion IS NULL) OR ((motivo_denegacion)::text = ANY ((ARRAY['INACTIVO'::character varying, 'CUOTA_PENDIENTE'::character varying, 'YA_DENTRO'::character varying, 'AFORO_COMPLETO'::character varying])::text[])))),
     CONSTRAINT chk_acceso_tipo_resultado CHECK (((tipo_resultado)::text = ANY ((ARRAY['PERMITIDO'::character varying, 'DENEGADO'::character varying])::text[]))),
     CONSTRAINT ck_acceso_horas CHECK (((fecha_hora_salida IS NULL) OR (fecha_hora_salida >= fecha_hora_entrada)))
@@ -74,8 +72,6 @@ CREATE TABLE gimnasio_test.actividad (
     sala character varying(80) NOT NULL,
     aforo_max integer NOT NULL,
     id_monitor bigint NOT NULL,
-    CONSTRAINT actividad_aforo_max_check CHECK ((aforo_max > 0)),
-    CONSTRAINT actividad_duracion_check CHECK ((duracion > 0)),
     CONSTRAINT chk_actividad_aforo CHECK ((aforo_max > 0)),
     CONSTRAINT chk_actividad_duracion CHECK ((duracion > 0))
 );
@@ -112,11 +108,7 @@ CREATE TABLE gimnasio_test.cuota (
     CONSTRAINT chk_cuota_estado CHECK (((estado)::text = ANY ((ARRAY['PENDIENTE'::character varying, 'PAGADA'::character varying])::text[]))),
     CONSTRAINT chk_cuota_importe CHECK ((importe > (0)::numeric)),
     CONSTRAINT chk_cuota_mes CHECK (((mes >= 1) AND (mes <= 12))),
-    CONSTRAINT ck_cuota_pago CHECK ((((estado)::text <> 'PAGADA'::text) OR (fecha_pago IS NOT NULL))),
-    CONSTRAINT cuota_anio_check CHECK (((anio >= 2000) AND (anio <= 9999))),
-    CONSTRAINT cuota_estado_check CHECK (((estado)::text = ANY ((ARRAY['PENDIENTE'::character varying, 'PAGADA'::character varying, 'VENCIDA'::character varying])::text[]))),
-    CONSTRAINT cuota_importe_check CHECK ((importe >= (0)::numeric)),
-    CONSTRAINT cuota_mes_check CHECK (((mes >= 1) AND (mes <= 12)))
+    CONSTRAINT ck_cuota_pago CHECK ((((estado)::text <> 'PAGADA'::text) OR (fecha_pago IS NOT NULL)))
 );
 
 
@@ -168,6 +160,7 @@ CREATE TABLE gimnasio_test.plan (
     nombre character varying(100) NOT NULL,
     tipo character varying(50) NOT NULL,
     precio_mensual numeric(10,2) NOT NULL,
+    CONSTRAINT chk_plan_tipo CHECK (tipo IN ('BASICO', 'PREMIUM')),
     CONSTRAINT chk_plan_precio_mensual CHECK ((precio_mensual > (0)::numeric))
 );
 
@@ -196,8 +189,7 @@ CREATE TABLE gimnasio_test.reserva (
     estado character varying(20) DEFAULT 'ACTIVA'::character varying NOT NULL,
     id_socio bigint NOT NULL,
     id_actividad bigint NOT NULL,
-    CONSTRAINT chk_reserva_estado CHECK (((estado)::text = ANY ((ARRAY['ACTIVA'::character varying, 'CANCELADA'::character varying, 'ASISTIDA'::character varying])::text[]))),
-    CONSTRAINT reserva_estado_check CHECK (((estado)::text = ANY ((ARRAY['ACTIVA'::character varying, 'CANCELADA'::character varying, 'ASISTIDA'::character varying])::text[])))
+    CONSTRAINT chk_reserva_estado CHECK (((estado)::text = ANY ((ARRAY['ACTIVA'::character varying, 'CANCELADA'::character varying, 'ASISTIDA'::character varying])::text[])))
 );
 
 
@@ -232,6 +224,7 @@ CREATE TABLE gimnasio_test.socio (
     id_plan bigint,
     creado_en timestamp without time zone,
     actualizado_en timestamp without time zone,
+    CONSTRAINT chk_socio_activo_con_plan CHECK (NOT activo OR id_plan IS NOT NULL),
     CONSTRAINT chk_socio_matricula CHECK (((matricula IS NULL) OR ((matricula)::text ~ '^[0-9]{4}[BCDFGHJKLMNPRSTVWXYZ]{3}$'::text)))
 );
 
@@ -260,6 +253,7 @@ CREATE TABLE gimnasio_test.usuario (
     contrasena character varying(255) NOT NULL,
     rol character varying(30) NOT NULL,
     id_socio bigint,
+    CONSTRAINT uq_usuario_socio UNIQUE (id_socio),
     CONSTRAINT usuario_rol_check CHECK (((rol)::text = ANY ((ARRAY['ADMIN'::character varying, 'RECEPCION'::character varying, 'SOCIO'::character varying])::text[])))
 );
 
@@ -327,14 +321,6 @@ ALTER TABLE ONLY gimnasio_test.plan
 
 
 --
--- Name: plan_socio plan_socio_pkey; Type: CONSTRAINT; Schema: gimnasio_test; Owner: -
---
-
-ALTER TABLE ONLY gimnasio_test.plan_socio
-    ADD CONSTRAINT plan_socio_pkey PRIMARY KEY (id_socio, id_plan);
-
-
---
 -- Name: reserva reserva_pkey; Type: CONSTRAINT; Schema: gimnasio_test; Owner: -
 --
 
@@ -375,11 +361,11 @@ ALTER TABLE ONLY gimnasio_test.cuota
 
 
 --
--- Name: reserva uq_reserva_socio_actividad; Type: CONSTRAINT; Schema: gimnasio_test; Owner: -
+-- Name: uq_reserva_socio_actividad_vigente; Type: INDEX; Schema: gimnasio_test; Owner: -
 --
 
-ALTER TABLE ONLY gimnasio_test.reserva
-    ADD CONSTRAINT uq_reserva_socio_actividad UNIQUE (id_socio, id_actividad);
+CREATE UNIQUE INDEX uq_reserva_socio_actividad_vigente
+    ON gimnasio_test.reserva (id_socio, id_actividad) WHERE estado <> 'CANCELADA';
 
 
 --
@@ -441,18 +427,11 @@ CREATE INDEX idx_socio_id_plan ON gimnasio_test.socio USING btree (id_plan);
 
 
 --
--- Name: idx_usuario_socio; Type: INDEX; Schema: gimnasio_test; Owner: -
---
-
-CREATE INDEX idx_usuario_socio ON gimnasio_test.usuario USING btree (id_socio);
-
-
---
 -- Name: acceso acceso_id_socio_fkey; Type: FK CONSTRAINT; Schema: gimnasio_test; Owner: -
 --
 
 ALTER TABLE ONLY gimnasio_test.acceso
-    ADD CONSTRAINT acceso_id_socio_fkey FOREIGN KEY (id_socio) REFERENCES gimnasio_test.socio(id_socio);
+    ADD CONSTRAINT acceso_id_socio_fkey FOREIGN KEY (id_socio) REFERENCES gimnasio_test.socio(id_socio) ON DELETE NO ACTION;
 
 
 --
@@ -460,7 +439,7 @@ ALTER TABLE ONLY gimnasio_test.acceso
 --
 
 ALTER TABLE ONLY gimnasio_test.actividad
-    ADD CONSTRAINT actividad_id_monitor_fkey FOREIGN KEY (id_monitor) REFERENCES gimnasio_test.monitor(id_monitor);
+    ADD CONSTRAINT actividad_id_monitor_fkey FOREIGN KEY (id_monitor) REFERENCES gimnasio_test.monitor(id_monitor) ON DELETE NO ACTION;
 
 
 --
@@ -468,7 +447,7 @@ ALTER TABLE ONLY gimnasio_test.actividad
 --
 
 ALTER TABLE ONLY gimnasio_test.cuota
-    ADD CONSTRAINT cuota_id_socio_fkey FOREIGN KEY (id_socio) REFERENCES gimnasio_test.socio(id_socio);
+    ADD CONSTRAINT cuota_id_socio_fkey FOREIGN KEY (id_socio) REFERENCES gimnasio_test.socio(id_socio) ON DELETE NO ACTION;
 
 
 --
@@ -488,27 +467,11 @@ ALTER TABLE ONLY gimnasio_test.socio
 
 
 --
--- Name: plan_socio plan_socio_id_plan_fkey; Type: FK CONSTRAINT; Schema: gimnasio_test; Owner: -
---
-
-ALTER TABLE ONLY gimnasio_test.plan_socio
-    ADD CONSTRAINT plan_socio_id_plan_fkey FOREIGN KEY (id_plan) REFERENCES gimnasio_test.plan(id_plan);
-
-
---
--- Name: plan_socio plan_socio_id_socio_fkey; Type: FK CONSTRAINT; Schema: gimnasio_test; Owner: -
---
-
-ALTER TABLE ONLY gimnasio_test.plan_socio
-    ADD CONSTRAINT plan_socio_id_socio_fkey FOREIGN KEY (id_socio) REFERENCES gimnasio_test.socio(id_socio);
-
-
---
 -- Name: reserva reserva_id_actividad_fkey; Type: FK CONSTRAINT; Schema: gimnasio_test; Owner: -
 --
 
 ALTER TABLE ONLY gimnasio_test.reserva
-    ADD CONSTRAINT reserva_id_actividad_fkey FOREIGN KEY (id_actividad) REFERENCES gimnasio_test.actividad(id_actividad);
+    ADD CONSTRAINT reserva_id_actividad_fkey FOREIGN KEY (id_actividad) REFERENCES gimnasio_test.actividad(id_actividad) ON DELETE NO ACTION;
 
 
 --
@@ -516,7 +479,7 @@ ALTER TABLE ONLY gimnasio_test.reserva
 --
 
 ALTER TABLE ONLY gimnasio_test.reserva
-    ADD CONSTRAINT reserva_id_socio_fkey FOREIGN KEY (id_socio) REFERENCES gimnasio_test.socio(id_socio);
+    ADD CONSTRAINT reserva_id_socio_fkey FOREIGN KEY (id_socio) REFERENCES gimnasio_test.socio(id_socio) ON DELETE NO ACTION;
 
 
 --
@@ -530,6 +493,3 @@ ALTER TABLE ONLY gimnasio_test.usuario
 --
 -- PostgreSQL database dump complete
 --
-
-\unrestrict shXDXE2I20VoNkYyE3mMjQ7E734OJhjwmxOTJqxTHxWGF6GHHIheypjUr7xgJhT
-

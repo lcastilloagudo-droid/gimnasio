@@ -29,11 +29,11 @@ public class Cuota {
     @Column(name = "anio", nullable = false)
     private Short anyo;
 
-    @Column(name = "importe", nullable = false)
+    @Column(name = "importe", nullable = false, precision = 10, scale = 2)
     private BigDecimal importe;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado", nullable = false)
+    @Column(name = "estado", nullable = false, length = 20)
     private EstadoCuota estado;
 
     @Column(name = "fecha_pago")

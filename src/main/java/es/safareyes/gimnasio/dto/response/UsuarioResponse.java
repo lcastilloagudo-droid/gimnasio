@@ -4,7 +4,7 @@ import es.safareyes.gimnasio.modelos.Rol;
 
 public record UsuarioResponse(
         Long id,
-        String nombre,
-        String email,
+        String nomUsuario,
+        Long idSocio,
         Rol rol
 ) {}

@@ -13,11 +13,11 @@ public class Plan {
     @Column(name = "id_plan")
     private Long id;
 
-    @Column(name = "nombre", nullable = false, unique = true)
+    @Column(name = "nombre", nullable = false, unique = true, length = 100)
     private String nombre;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "tipo", nullable = false)
+    @Column(name = "tipo", nullable = false, length = 50)
     private Tipo tipo;
 
     @Column(name = "precio_mensual", nullable = false, precision = 10, scale = 2)

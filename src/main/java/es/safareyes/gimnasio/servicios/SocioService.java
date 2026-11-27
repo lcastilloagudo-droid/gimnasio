@@ -7,6 +7,7 @@ import es.safareyes.gimnasio.dto.response.SocioResponse;
 import es.safareyes.gimnasio.exception.ConflictoException;
 import es.safareyes.gimnasio.exception.PeticionInvalidaException;
 import es.safareyes.gimnasio.exception.RecursoNoEncontradoException;
+import es.safareyes.gimnasio.exception.ReglaNegocioException;
 import es.safareyes.gimnasio.mapper.SocioMapper;
 import es.safareyes.gimnasio.modelos.Plan;
 import es.safareyes.gimnasio.modelos.Socio;
@@ -17,6 +18,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,13 +49,18 @@ public class SocioService {
                                      Pageable pageable) {
         if (fechaAltaDesde != null && fechaAltaHasta != null
                 && fechaAltaDesde.isAfter(fechaAltaHasta)) {
-            throw new PeticionInvalidaException("La fecha inicial no puede ser posterior a la final");
+            throw new PeticionInvalidaException("fechaAltaDesde", "La fecha inicial no puede ser posterior a la final");
         }
         pageable.getSort().forEach(orden -> {
             if (!CAMPOS_ORDEN.contains(orden.getProperty())) {
-                throw new PeticionInvalidaException("Campo de ordenacion no permitido: " + orden.getProperty());
+                throw new PeticionInvalidaException("sort", "Campo de ordenación no permitido");
             }
         });
+
+        if (pageable.isPaged() && pageable.getSort().getOrderFor("id") == null) {
+            pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
+                    pageable.getSort().and(Sort.by("id")));
+        }
 
         return socioRepository.findAll(
                 SocioSpecifications.conFiltros(activo, idPlan, texto, fechaAltaDesde, fechaAltaHasta),
@@ -77,7 +85,7 @@ public class SocioService {
         socio.setEmail(email);
         socio.setPlan(plan);
         socio.setFechaAlta(LocalDate.now(ZoneId.of("Europe/Madrid")));
-        socio.setActivo(true);
+        socio.setActivo(plan != null);
 
         Socio guardado = socioRepository.saveAndFlush(socio);
         log.info("Socio creado: id={}", guardado.getId());
@@ -86,12 +94,15 @@ public class SocioService {
 
     @Transactional
     public SocioResponse actualizar(Long id, SocioUpdateRequest request) {
-        Socio socio = buscarSocio(id);
+        Socio socio = bloquearSocio(id);
         String email = request.email().toLowerCase(Locale.ROOT);
         if (socioRepository.existsByEmailIgnoreCaseAndIdNot(email, id)) {
             throw new ConflictoException("Ya existe otro socio con ese email");
         }
 
+        if (socio.getActivo() && request.idPlan() == null) {
+            throw new ReglaNegocioException("Un socio activo debe tener un plan");
+        }
         Plan plan = buscarPlan(request.idPlan());
         socioMapper.actualizar(request, socio);
         socio.setEmail(email);
@@ -104,7 +115,10 @@ public class SocioService {
 
     @Transactional
     public SocioResponse cambiarEstado(Long id, SocioEstadoRequest request) {
-        Socio socio = buscarSocio(id);
+        Socio socio = bloquearSocio(id);
+        if (request.activo() && socio.getPlan() == null) {
+            throw new ReglaNegocioException("Asigna un plan antes de activar al socio");
+        }
         socioMapper.cambiarEstado(request, socio);
         Socio guardado = socioRepository.saveAndFlush(socio);
         log.info("Estado del socio {} cambiado a {}", id, guardado.getActivo());
@@ -113,6 +127,11 @@ public class SocioService {
 
     private Socio buscarSocio(Long id) {
         return socioRepository.buscarConPlan(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException("No existe el socio con id " + id));
+    }
+
+    private Socio bloquearSocio(Long id) {
+        return socioRepository.bloquearPorId(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("No existe el socio con id " + id));
     }
 

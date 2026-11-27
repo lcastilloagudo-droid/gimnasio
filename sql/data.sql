@@ -1,13 +1,11 @@
 -- FITZONE | Datos de prueba del backend SafaReyes.
 -- Requisitos: Proyecto_Backend_SafaReyes.pdf, caso 2 (FitZone).
 -- Destino: base de datos postgres, esquema gimnasio_test.
--- ANTES: ejecutar sql/01_ajustes_fitzone.sql y sql/02_checks_fitzone.sql.
+-- ANTES: ejecutar sql/schema.sql en una base de pruebas vacía.
 -- Si la carga anterior fallo: terminar con ROLLBACK y comprobar tablas vacias.
 -- EJECUTAR UNA SOLA VEZ y sobre TABLAS VACIAS. No usa TRUNCATE ni DELETE.
 -- Datos ficticios; no utilizar estas credenciales ni estos importes en produccion.
 -- Las fechas dependen de CURRENT_DATE de PostgreSQL (configurar Europe/Madrid).
--- IMPORTANTE: se ha elaborado segun las entidades JPA y la migracion disponibles
--- en GitHub; aun no se dispone del DDL original completo para validar restricciones.
 
 BEGIN;
 SET LOCAL search_path TO gimnasio_test;
@@ -116,7 +114,7 @@ SELECT c.id_socio, p.id_plan,
        c.estado_cuota,
        CASE WHEN c.estado_cuota = 'PAGADA'
             THEN CASE WHEN c.desplazamiento = 0
-                      THEN CURRENT_DATE - 1
+                      THEN GREATEST(c.fecha_mes, CURRENT_DATE - 1)
                       ELSE c.fecha_mes + 5
                  END
             ELSE NULL

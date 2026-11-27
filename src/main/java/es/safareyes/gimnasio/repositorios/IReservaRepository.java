@@ -12,7 +12,8 @@ import java.util.List;
 
 public interface IReservaRepository extends JpaRepository<Reserva, Long> {
 
-    // RN-08: impedir reservar dos veces una misma clase activa.
+    // RN-08: detectar una reserva activa. El índice parcial impide además
+    // volver a reservar una clase ya asistida y conserva las canceladas.
     boolean existsByIdSocio_IdAndIdActividad_IdAndEstado(
             Long socioId, Long actividadId, Estado estado);
 
@@ -23,6 +24,7 @@ public interface IReservaRepository extends JpaRepository<Reserva, Long> {
     long countByIdSocio_IdAndEstadoAndIdActividad_FechaHoraAfter(
             Long socioId, Estado estado, LocalDateTime ahora);
 
+    @EntityGraph(attributePaths = "idActividad")
     Page<Reserva> findByIdSocio_IdOrderByFechaReservaDesc(Long socioId, Pageable pageable);
 
     @EntityGraph(attributePaths = "idActividad")

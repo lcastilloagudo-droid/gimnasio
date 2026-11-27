@@ -28,14 +28,14 @@ public class Acceso {
     private LocalDateTime fechaHoraSalida;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "tipo_resultado", nullable = false)
+    @Column(name = "tipo_resultado", nullable = false, length = 20)
     private ResultadoAcceso tipoResultado;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "motivo_denegacion")
+    @Column(name = "motivo_denegacion", length = 255)
     private MotivoDenegacion motivoDenegacion;
 
-    @Column(name = "ticket_parking")
+    @Column(name = "ticket_parking", length = 100)
     private String ticketParking;
 
 

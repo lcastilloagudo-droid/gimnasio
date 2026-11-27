@@ -29,7 +29,7 @@ public class Reserva {
     private LocalDateTime fechaReserva;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado", nullable = false)
+    @Column(name = "estado", nullable = false, length = 20)
     private Estado estado;
 
 

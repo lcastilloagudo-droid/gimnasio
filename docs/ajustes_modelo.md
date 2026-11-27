@@ -1,42 +1,34 @@
-# Adaptacion de FitZone a los requisitos de backend
+# Modelo y migración de FitZone
 
-## Referencia
-Proyecto_Backend_SafaReyes.pdf, caso 2 FitZone, secciones 6.1 a 6.8.
+Referencia: enunciado de DWES, secciones 3, 6 y 9, y manuales de Spring Boot, partes 2 y 3.
 
-## Ajustes de modelo (fase 1)
-- `Plan.precioMensual`: cada plan tiene su tarifa, que no se inventa en la migracion.
-- `Socio.matricula`: texto opcional con formato 1234BCD, no booleano.
-- `Socio.plan`: asociacion al plan actual; los cambios solo afectan cuotas futuras.
-- `Cuota.plan`: plan historico para informes por mes y plan; `importe` conserva el precio cobrado.
-- `Socio.creadoEn/actualizadoEn`: auditoria mediante callbacks JPA.
-- `Rol`: ADMIN, RECEPCION y SOCIO, como exige FitZone.
+## Plan y cuotas
 
-## Restricciones SQL y validaciones en Java
-El enunciado exige ambas cosas: `CHECK` en PostgreSQL para estados, rangos e importes,
-y validaciones de entrada en los DTOs con Jakarta Validation.
+El RF-01 permite un socio sin plan y RN-03/RN-04 necesitan un precio para generar la cuota de cada socio activo. Las altas con plan quedan activas y las altas sin plan quedan inactivas. Un socio inactivo puede quitar su plan o asignarse uno antes de activarse. La API devuelve 422 al quitar el plan de un socio activo o al activar sin plan. Las escrituras sobre el socio se serializan con un bloqueo de fila y el CHECK protege también las escrituras directas en PostgreSQL.
 
-- `sql/01_ajustes_fitzone.sql`: estructura, precio del plan y formato de matrícula.
-- `sql/02_checks_fitzone.sql`: corrige `usuario_rol_check` para
-  `ADMIN`, `RECEPCION`, `SOCIO` e incorpora las restricciones de cuotas, reservas,
-  accesos y actividades, además de verificar precio y matrícula.
-- `SocioRequest` y `PlanRequest`: validación de formato en Java.
-- `DniValidator`: letra de control del DNI.
-- Los servicios comprobarán duplicados, autorizaciones y demás reglas de negocio.
-- Los controladores deberán usar `@Valid`.
+El PUT sustituye el contacto, el plan y la matrícula. Un `null` en matrícula la elimina. Cambiar el plan del socio afecta a cuotas futuras (RN-09). Cada cuota ya generada conserva su relación al plan histórico y el importe aplicado.
 
-## Pasos para aplicar
-1. Haz copia de seguridad de la base si contiene datos.
-2. En DBeaver, selecciona la base `postgres` y ejecuta `sql/01_ajustes_fitzone.sql` y después `sql/02_checks_fitzone.sql`.
-3. Verifica que `DB_SCHEMA=gimnasio_test` y ejecuta Spring Boot con `ddl-auto=validate`.
-4. Introduce precios reales en los planes y asigna el plan de los socios que ya existan.
-5. La tabla anterior `plan_socio` permanece sin borrar mientras se revisa su contenido.
+## Base existente
 
-## Pendiente para completar fase 1
-- Confirmar precios de planes BASICO y PREMIUM.
-- Consolidar `schema.sql` completo, `data.sql` (min. 10 filas en tablas principales)
-  y `docs/consultas.sql` (3 consultas).
-- Revisar datos existentes y eventualmente retirar `plan_socio` sin perder historial.
-- Verificar convenciones y restricciones de dominio que faltan en el esquema.
+Aplica una sola vez `sql/03_consolidacion_fitzone.sql` sobre la base existente si ya tiene el modelo de `01_ajustes_fitzone.sql` y los CHECK de `02_checks_fitzone.sql`. Elige la base y revisa el esquema de `SET LOCAL search_path`; el valor del repositorio es `gimnasio_test`. Haz una copia de seguridad antes y ejecuta el script completo en una transacción. Con `psql`, usa `-v ON_ERROR_STOP=1`. Si el cliente deja abierta una transacción fallida, ejecuta `ROLLBACK`.
 
-## Pendiente fase 2
-Las 16 consultas Q1-Q8 y sus pruebas; `@EntityGraph` para evitar N+1.
+Antes de aplicarla puedes detectar incompatibilidades con estas consultas de solo lectura en el esquema elegido:
+
+```sql
+SELECT id_socio FROM socio WHERE activo AND id_plan IS NULL;
+SELECT id_socio, count(*) FROM usuario WHERE id_socio IS NOT NULL
+GROUP BY id_socio HAVING count(*) > 1;
+SELECT id_plan FROM plan WHERE tipo NOT IN ('BASICO', 'PREMIUM');
+SELECT id_cuota FROM cuota WHERE estado NOT IN ('PENDIENTE', 'PAGADA');
+SELECT id_socio, id_actividad, count(*) FROM reserva
+WHERE estado <> 'CANCELADA'
+GROUP BY id_socio, id_actividad HAVING count(*) > 1;
+```
+
+Si alguna consulta devuelve filas, consulta qué plan, estado o vínculo corresponde antes de corregir esos datos manualmente. La migración valida las restricciones sin reasignar socios ni cambiar importes o estados. Si aún existe la antigua tabla `plan_socio`, la migración conserva sus filas y su estructura. El esquema de instalaciones nuevas ya no incluye esa tabla.
+
+## Autenticación e integración pendientes
+
+FitZone identifica las cuentas por `nomUsuario`. El DNI del registro localiza la ficha, pero cualquiera podría conocerlo. Antes de vincular una cuenta, habrá que comprobar un código de un solo uso y con caducidad entregado por recepción tras verificar la identidad del socio, o enviado a un canal previamente verificado que ya figure en su ficha. La solicitud no debe poder elegir ese canal. El servidor debe consumir el código y vincular el usuario en la misma transacción, asignar siempre `SOCIO` en el registro público y limitar los intentos.
+
+La futura autorización de propiedad comparará el `idSocio` del usuario autenticado con el socio del recurso. La FK opcional y única permite tener cuentas de personal sin ficha de socio y como máximo una cuenta por ficha. El JWT caducará a los 60 minutos. Las integraciones usarán `X-API-KEY` y configuración sensible externa al repositorio. Un fallo de ParkControl se reflejará en el bloque `integracion` sin revocar la entrada guardada. El 503 se reservará para operaciones que dependan del servicio externo para poder completarse.

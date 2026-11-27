@@ -2,13 +2,13 @@
 
 El archivo `sql/data.sql` contiene exclusivamente **datos ficticios** para el esquema `gimnasio_test`. No es un script para producción.
 
-## Ejecución en DBeaver
+## Crear la base y ejecutar las pruebas
 
-1. Comprueba que el esquema `gimnasio_test` está vacío.
-2. Ejecuta `sql/01_ajustes_fitzone.sql` si no lo has aplicado; después ejecuta `sql/02_checks_fitzone.sql` para mantener los CHECK exigidos y corregir `usuario_rol_check`.
-3. Selecciona la base `postgres` y ejecuta `sql/data.sql` completo.
-4. No lo ejecutes dos veces: los registros se insertan una sola vez y no se borran datos.
-5. Arranca Spring Boot y comprueba los repositorios.
+1. Crea una base de datos dedicada y vacía en PostgreSQL 16.
+2. Ejecuta `sql/schema.sql` y luego `sql/data.sql` completos, una sola vez y en esa base. El esquema `gimnasio_test` lo crea el primer script.
+3. Configura `FITZONE_TEST_DB_URL`, `FITZONE_TEST_DB_USER` y `FITZONE_TEST_DB_PASSWORD` con los datos de esa base y ejecuta `./mvnw test`. Las pruebas de persistencia usan el perfil `test` y el esquema `gimnasio_test`.
+
+Para actualizar una base ya poblada, consulta [la migración](ajustes_modelo.md#base-existente).
 
 ## Filas esperadas
 
@@ -27,11 +27,11 @@ El archivo `sql/data.sql` contiene exclusivamente **datos ficticios** para el es
 
 - **Socios**: `socio01@ejemplo.test` está activo, tiene plan PREMIUM y matrícula `1234BCD`; el socio 12 es BASICO; los socios 7, 16 y 19 están inactivos.
 - **Cuotas**: los socios 2, 7, 8, 15, 16 y 19 tienen cuota actual pendiente; el socio 4 cambió de BASICO a PREMIUM (las cuotas anteriores conservan el plan anterior). Hay 12 cuotas pendientes en total.
-- **Modificación Q4**: el socio 15 tiene dos cuotas antiguas pendientes pero sigue activo para probar `desactivarSociosMorosos("PENDIENTE", 2)`. Si se ejecuta una sola vez sobre los datos recién cargados, debe actualizar **1 socio**.
+- **Modificación Q4**: el socio 15 tiene dos cuotas antiguas pendientes pero sigue activo para probar `desactivarSociosMorosos(EstadoCuota.PENDIENTE, 2, ahora)`. Si se ejecuta una sola vez sobre los datos recién cargados, debe actualizar **1 socio**.
 - **Torno**: hay tres accesos permitidos de hoy sin salida (socios 1, 3 y 6), más entradas con salida y denegaciones por INACTIVO, CUOTA_PENDIENTE y YA_DENTRO. No se simula el aforo completo de 150 personas.
 - **Actividades**: Spinning de mañana a las 18:00 tiene aforo 2 y dos reservas ACTIVA: está completo.
 - **Reservas**: socios 1, 4 y 6 tienen 3 reservas futuras ACTIVA; hay también canceladas y asistidas.
-- **Usuarios de prueba**: `admin_fitzone`, `recepcion_fitzone` y `socio01` a `socio10`; todos con contraseña de **pruebas** `Test1234!` y hash BCrypt. La autenticación todavía no está implementada.
+- **Usuarios de prueba**: `admin_fitzone`, `recepcion_fitzone` y `socio01` a `socio10`; todos con contraseña de **pruebas** `Test1234!` y hash BCrypt `$2y$10$`. El formato es compatible con `BCryptPasswordEncoder`, el codificador que pide el enunciado. Si finalmente se usa el delegante del manual, el hash guardado deberá comenzar con `{bcrypt}`; el hash BCrypt en sí no cambia.
 
 ## Comprobaciones SQL rápidas
 
@@ -65,7 +65,6 @@ GROUP BY a.id_actividad, a.nombre, a.fecha_hora, a.aforo_max;
 
 ## Limitaciones y advertencias
 
-- El script se ha escrito a partir de las entidades JPA y la migración que están en GitHub. **El DDL original de las tablas no está en el repositorio**: si hay restricciones adicionales diferentes, habrá que ajustar los datos a ese DDL antes de ejecutarlo.
 - Los precios de 30 y 50 euros son **ficticios**, solo para pruebas.
 - Las fechas son relativas a `CURRENT_DATE`; los recuentos esperados de actividades futuras y aforo corresponden al día de inserción.
 - Para probar el aforo global completo de 150 personas, se necesita otra carga específica.

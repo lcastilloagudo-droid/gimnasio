@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Entity
 @Table(name = "socio")
@@ -14,19 +15,19 @@ public class Socio {
     @Column(name = "id_socio")
     private Long id;
 
-    @Column(name = "dni", nullable = false, unique = true)
+    @Column(name = "dni", nullable = false, unique = true, length = 15)
     private String dni;
 
-    @Column(name = "nombre", nullable = false)
+    @Column(name = "nombre", nullable = false, length = 100)
     private String nombre;
 
-    @Column(name = "apellidos", nullable = false)
+    @Column(name = "apellidos", nullable = false, length = 150)
     private String apellidos;
 
-    @Column(name = "email", nullable = false, unique = true)
+    @Column(name = "email", nullable = false, unique = true, length = 255)
     private String email;
 
-    @Column(name = "telf")
+    @Column(name = "telf", length = 20)
     private String telefono;
 
     @Column(name = "fecha_alta", nullable = false)
@@ -35,7 +36,7 @@ public class Socio {
     @Column(name = "activo", nullable = false)
     private Boolean activo;
 
-    @Column(name = "matricula")
+    @Column(name = "matricula", length = 7)
     private String matricula;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -50,12 +51,12 @@ public class Socio {
 
     @PrePersist
     void alCrear() {
-        creadoEn = LocalDateTime.now();
+        creadoEn = LocalDateTime.now(ZoneId.of("Europe/Madrid"));
         actualizadoEn = creadoEn;
     }
 
     @PreUpdate
     void alActualizar() {
-        actualizadoEn = LocalDateTime.now();
+        actualizadoEn = LocalDateTime.now(ZoneId.of("Europe/Madrid"));
     }
 }

@@ -8,6 +8,7 @@ import es.safareyes.gimnasio.servicios.SocioService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -21,6 +22,7 @@ import java.time.LocalDate;
 @RestController
 @RequestMapping("/api/v1/socios")
 @RequiredArgsConstructor
+@Slf4j
 public class SocioController {
     private final SocioService socioService;
 
@@ -34,6 +36,7 @@ public class SocioController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
             LocalDate fechaAltaHasta,
             @PageableDefault(size = 10, sort = "id") Pageable pageable) {
+        log.debug("Consulta paginada de socios");
         return socioService.listar(activo, idPlan, texto, fechaAltaDesde, fechaAltaHasta, pageable);
     }
 
