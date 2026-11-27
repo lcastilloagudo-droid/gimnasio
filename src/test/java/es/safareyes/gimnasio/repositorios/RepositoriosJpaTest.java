@@ -143,7 +143,7 @@ class RepositoriosJpaTest {
         assertThat(moroso.getActivo()).isTrue();
 
         LocalDateTime ahora = LocalDateTime.now(ZoneId.of("Europe/Madrid")).withNano(0);
-        assertThat(socios.desactivarSociosMorosos(EstadoCuota.PENDIENTE, 2, ahora)).isEqualTo(1);
+        assertThat(socios.desactivarSociosMorosos(EstadoCuota.PENDIENTE, 2, (short) 1, (short) 2099, ahora)).isEqualTo(1);
         Socio desactivado = socios.findById(moroso.getId()).orElseThrow();
         assertThat(desactivado.getActivo()).isFalse();
         assertThat(desactivado.getActualizadoEn()).isEqualTo(ahora);

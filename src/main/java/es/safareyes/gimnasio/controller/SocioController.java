@@ -3,7 +3,9 @@ package es.safareyes.gimnasio.controller;
 import es.safareyes.gimnasio.dto.request.SocioEstadoRequest;
 import es.safareyes.gimnasio.dto.request.SocioRequest;
 import es.safareyes.gimnasio.dto.request.SocioUpdateRequest;
+import es.safareyes.gimnasio.dto.response.CuotaResponse;
 import es.safareyes.gimnasio.dto.response.SocioResponse;
+import es.safareyes.gimnasio.servicios.CuotaService;
 import es.safareyes.gimnasio.servicios.SocioService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
@@ -25,6 +27,7 @@ import java.time.LocalDate;
 @Slf4j
 public class SocioController {
     private final SocioService socioService;
+    private final CuotaService cuotaService;
 
     @GetMapping
     public Page<SocioResponse> listar(
@@ -43,6 +46,12 @@ public class SocioController {
     @GetMapping("/{id}")
     public SocioResponse getSocioById(@PathVariable @Positive Long id) {
         return socioService.getSocioById(id);
+    }
+
+    @GetMapping("/{id}/cuotas")
+    public Page<CuotaResponse> historialCuotas(@PathVariable @Positive Long id,
+                                              @PageableDefault(size = 10) Pageable pageable) {
+        return cuotaService.historial(id, pageable);
     }
 
     @PostMapping

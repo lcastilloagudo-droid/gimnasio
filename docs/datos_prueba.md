@@ -27,7 +27,7 @@ Para actualizar una base ya poblada, consulta [la migración](ajustes_modelo.md#
 
 - **Socios**: `socio01@ejemplo.test` está activo, tiene plan PREMIUM y matrícula `1234BCD`; el socio 12 es BASICO; los socios 7, 16 y 19 están inactivos.
 - **Cuotas**: los socios 2, 7, 8, 15, 16 y 19 tienen cuota actual pendiente; el socio 4 cambió de BASICO a PREMIUM (las cuotas anteriores conservan el plan anterior). Hay 12 cuotas pendientes en total.
-- **Modificación Q4**: el socio 15 tiene dos cuotas antiguas pendientes pero sigue activo para probar `desactivarSociosMorosos(EstadoCuota.PENDIENTE, 2, ahora)`. Si se ejecuta una sola vez sobre los datos recién cargados, debe actualizar **1 socio**.
+- **Modificación Q4**: el socio 15 tiene dos cuotas antiguas pendientes pero sigue activo para probar `desactivarSociosMorosos` con el periodo de generación y la fecha de auditoría. Si se ejecuta una sola vez sobre los datos recién cargados, debe actualizar **1 socio**.
 - **Torno**: hay tres accesos permitidos de hoy sin salida (socios 1, 3 y 6), más entradas con salida y denegaciones por INACTIVO, CUOTA_PENDIENTE y YA_DENTRO. No se simula el aforo completo de 150 personas.
 - **Actividades**: Spinning de mañana a las 18:00 tiene aforo 2 y dos reservas ACTIVA: está completo.
 - **Reservas**: socios 1, 4 y 6 tienen 3 reservas futuras ACTIVA; hay también canceladas y asistidas.

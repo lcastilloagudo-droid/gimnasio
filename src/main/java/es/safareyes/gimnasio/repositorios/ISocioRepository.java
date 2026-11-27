@@ -69,6 +69,11 @@ public interface ISocioRepository extends JpaRepository<Socio, Long>, JpaSpecifi
     @EntityGraph(attributePaths = "plan")
     Page<Socio> findByActivoTrue(Pageable pageable);
 
+    // Serializa la generación mensual y espera a las escrituras de SocioService.
+    @Modifying
+    @Query(value = "LOCK TABLE socio IN EXCLUSIVE MODE", nativeQuery = true)
+    void bloquearParaGenerarCuotas();
+
     // Q4: RN-04, desactivar en bloque socios con al menos N cuotas pendientes.
     // Se ejecuta dentro de una transaccion; devuelve cuantas filas modifica.
     @Modifying(clearAutomatically = true, flushAutomatically = true)
@@ -79,6 +84,7 @@ public interface ISocioRepository extends JpaRepository<Socio, Long>, JpaSpecifi
                 SELECT c.idSocio.id
                 FROM Cuota c
                 WHERE c.estado = :estadoPendiente
+                  AND (c.mes <> :mes OR c.anyo <> :anyo)
                 GROUP BY c.idSocio.id
                 HAVING COUNT(c.id) >= :minimoPendientes
             )
@@ -86,5 +92,7 @@ public interface ISocioRepository extends JpaRepository<Socio, Long>, JpaSpecifi
     int desactivarSociosMorosos(
             @Param("estadoPendiente") EstadoCuota estadoPendiente,
             @Param("minimoPendientes") long minimoPendientes,
+            @Param("mes") short mes,
+            @Param("anyo") short anyo,
             @Param("actualizadoEn") LocalDateTime actualizadoEn);
 }

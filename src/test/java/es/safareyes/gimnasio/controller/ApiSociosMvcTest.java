@@ -8,6 +8,7 @@ import es.safareyes.gimnasio.exception.IntegracionException;
 import es.safareyes.gimnasio.exception.RecursoNoEncontradoException;
 import es.safareyes.gimnasio.exception.ReglaNegocioException;
 import es.safareyes.gimnasio.modelos.Tipo;
+import es.safareyes.gimnasio.servicios.CuotaService;
 import es.safareyes.gimnasio.servicios.PlanService;
 import es.safareyes.gimnasio.servicios.SocioService;
 import org.junit.jupiter.api.Test;
@@ -39,6 +40,7 @@ class ApiSociosMvcTest {
     @Autowired private MockMvc mvc;
     @MockitoBean private SocioService socios;
     @MockitoBean private PlanService planes;
+    @MockitoBean private CuotaService cuotas;
 
     @Test
     void altaDevuelveCreatedLocationYPlan() throws Exception {

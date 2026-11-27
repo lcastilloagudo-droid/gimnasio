@@ -4,25 +4,37 @@ import es.safareyes.gimnasio.dto.response.IngresoMensualDto;
 import es.safareyes.gimnasio.modelos.Cuota;
 import es.safareyes.gimnasio.modelos.EstadoCuota;
 import es.safareyes.gimnasio.dto.response.SocioMorosoResponse;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ICuotaRepository extends JpaRepository<Cuota, Long> {
 
     // Q1: evitar dos cuotas del mismo socio, mes y año (RN-03).
     boolean existsByIdSocio_IdAndMesAndAnyo(Long socioId, Short mes, Short anyo);
 
+    boolean existsByIdSocio_IdAndMesAndAnyoAndEstado(Long socioId, Short mes, Short anyo, EstadoCuota estado);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT c FROM Cuota c WHERE c.id = :id")
+    Optional<Cuota> bloquearParaPago(@Param("id") Long id);
+
     long countByIdSocio_IdAndEstado(Long socioId, EstadoCuota estado);
 
     // Q6: historial paginado del socio (endpoint 9).
     @EntityGraph(attributePaths = "plan")
     Page<Cuota> findByIdSocio_IdOrderByAnyoDescMesDesc(Long socioId, Pageable pageable);
+
+    @EntityGraph(attributePaths = "plan")
+    Page<Cuota> findByIdSocio_Id(Long socioId, Pageable pageable);
 
     List<Cuota> findByMesAndAnyoAndEstado(Short mes, Short anyo, EstadoCuota estado);
 
